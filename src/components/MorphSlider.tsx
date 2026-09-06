@@ -28,6 +28,7 @@ export interface MorphSliderProps {
   drift?: number;
   autoplay?: boolean;
   autoplayDelay?: number;
+  pauseOnHover?: boolean;
   loop?: boolean;
   radius?: number;
   overlayColor?: string;
@@ -596,6 +597,7 @@ export default function MorphSlider({
   drift = 0,
   autoplay = false,
   autoplayDelay = 4,
+  pauseOnHover = true,
   loop = true,
   radius = 16,
   overlayColor = '#000000',
@@ -618,6 +620,7 @@ export default function MorphSlider({
     changeRef.current?.(next);
   }, []);
   const [hovering, setHovering] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [ready, setReady] = useState(false);
 
   const optsRef = useRef<EngineOptions>({
@@ -646,7 +649,7 @@ export default function MorphSlider({
       items,
       startIndex,
       reducedMotion,
-      dprCap: 1.5,
+      dprCap: 2,
       onReady: () => { engine.jumpTo(indexRef.current); setReady(true); },
       onError: () => { setReady(false); engineRef.current = null; engine?.destroy(); },
       getOptions: () => optsRef.current,
@@ -661,14 +664,25 @@ export default function MorphSlider({
     };
   }, [items, startIndex, changeIndex]);
 
-  const handleNext = useCallback(() => { if (engineRef.current && ready) engineRef.current.next(); else if (items.length) changeIndex(loop ? (indexRef.current + 1) % items.length : Math.min(indexRef.current + 1, items.length - 1)); }, [items.length, loop, ready, changeIndex]);
-  const handlePrev = useCallback(() => { if (engineRef.current && ready) engineRef.current.prev(); else if (items.length) changeIndex(loop ? (indexRef.current - 1 + items.length) % items.length : Math.max(indexRef.current - 1, 0)); }, [items.length, loop, ready, changeIndex]);
+  const navigateTo = useCallback((next: number, step?: number) => {
+    if (!items.length || next === indexRef.current) return;
+    const direction = step ?? next - indexRef.current;
+    // Keep navigation independent of the renderer, including during image loading.
+    changeIndex(next);
+    const engine = engineRef.current;
+    if (engine && ready) {
+      try { engine.goTo(direction); }
+      catch { engine.destroy(); engineRef.current = null; setReady(false); }
+    }
+  }, [items.length, ready, changeIndex]);
+  const handleNext = useCallback(() => { if (items.length) navigateTo(loop ? (indexRef.current + 1) % items.length : Math.min(indexRef.current + 1, items.length - 1), 1); }, [items.length, loop, navigateTo]);
+  const handlePrev = useCallback(() => { if (items.length) navigateTo(loop ? (indexRef.current - 1 + items.length) % items.length : Math.max(indexRef.current - 1, 0), -1); }, [items.length, loop, navigateTo]);
 
   useEffect(() => {
-    if (!autoplay || hovering || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    if (!autoplay || paused || (pauseOnHover && hovering) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
     const id = window.setTimeout(handleNext, Math.max(autoplayDelay, 1) * 1000);
     return () => window.clearTimeout(id);
-  }, [autoplay, autoplayDelay, hovering, index, handleNext]);
+  }, [autoplay, autoplayDelay, pauseOnHover, paused, hovering, index, handleNext]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -738,6 +752,8 @@ export default function MorphSlider({
   return (
     <div
       className={`morph-slider ${className}`.trim()}
+      data-slide-index={index}
+      data-renderer={ready ? 'webgl' : 'image'}
       style={
         {
           borderRadius: `${radius}px`,
@@ -756,7 +772,7 @@ export default function MorphSlider({
       onKeyDown={onKeyDown}
       {...props}
     >
-      <NextImage src={items[index].image} alt={items[index].caption ?? "Atlas sahnesinden"} fill sizes="(max-width: 768px) 100vw, 70vw" className={fit === "contain" ? "pointer-events-none object-contain" : "pointer-events-none object-cover"} priority={startIndex === 0} />
+      <NextImage src={items[index].image} alt={items[index].caption ?? "Atlas sahnesinden"} fill sizes="100vw" quality={90} className={fit === "contain" ? "pointer-events-none object-contain" : "pointer-events-none object-cover"} priority={startIndex === 0} />
       <div
         ref={containerRef}
         className="morph-slider-stage"
@@ -780,7 +796,10 @@ export default function MorphSlider({
       )}
 
       {showControls && (
-        <div className="morph-slider-controls">
+        <div className="morph-slider-controls" onPointerDown={event => event.stopPropagation()}>
+          {autoplay && <button type="button" className="morph-slider-btn" aria-label={paused ? "Otomatik geçişi başlat" : "Otomatik geçişi duraklat"} aria-pressed={paused} onClick={() => setPaused(previous => !previous)}>
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">{paused ? <path d="m9 5 10 7-10 7V5Z" fill="currentColor"/> : <path d="M8 5v14M16 5v14" stroke="currentColor" strokeWidth="2"/>}</svg>
+          </button>}
           <button type="button" className="morph-slider-btn" aria-label="Önceki görsel" disabled={!loop && index === 0} onClick={handlePrev}>
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
               <path
@@ -820,11 +839,7 @@ export default function MorphSlider({
               aria-pressed={i === index}
               aria-label={`Görsel ${i + 1}`}
               className={`morph-slider-dot ${i === index ? 'is-active' : ''}`}
-              onClick={() => {
-                const engine = engineRef.current;
-                if (i === index) return;
-                if (engine && ready) engine.goTo(i - indexRef.current); else changeIndex(i);
-              }}
+              onClick={() => navigateTo(i)}
             />
           ))}
         </div>

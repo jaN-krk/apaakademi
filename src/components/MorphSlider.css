@@ -52,8 +52,8 @@
   letter-spacing: 0.01em;
   color: #fff;
   background: rgba(10, 10, 12, 0.42);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   opacity: 0;
   transform: translateY(12px);
   filter: blur(6px);
@@ -93,8 +93,8 @@
   border-radius: 50%;
   color: #fff;
   background: rgba(12, 12, 14, 0.4);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   cursor: pointer;
   transition:
     transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
@@ -175,8 +175,9 @@
 /* Atlas: readable captions and generous touch controls. */
 .morph-slider-caption { bottom: 84px; left: 24px; max-width: calc(100% - 48px); }
 .morph-slider-caption-text { border-radius: 0; font-weight: 400; background: rgba(0,0,0,.75); }
-.morph-slider-controls { top: auto; bottom: 20px; left: auto; width: 120px; gap: 8px; transform: none; padding: 0 20px 0 0; }
+.morph-slider-controls { top: auto; bottom: 20px; left: auto; width: auto; gap: 8px; transform: none; padding: 0 20px 0 0; z-index: 5; }
 .morph-slider-btn { width: 44px; height: 44px; flex-shrink: 0; }
+.morph-slider-btn svg { pointer-events: none; }
 .morph-slider-indicators { right: 140px; left: 24px; bottom: 20px; justify-content: flex-start; flex-wrap: wrap; gap: 0; }
 .morph-slider-dot { position: relative; width: 24px; height: 44px; border-radius: 0; background: transparent; }
 .morph-slider-dot::after { content: ""; position: absolute; left: 5px; right: 5px; top: 21px; height: 2px; background: #ffffff70; }

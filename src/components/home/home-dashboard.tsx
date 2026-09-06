@@ -7,8 +7,8 @@ import MorphSlider from "@/components/MorphSlider"
 import styles from "./home.module.css"
 
 const slides = [
-  { image: "/media/theatre/yabanci/yabanci-scene-2.jpg", caption: "Yabancı", slug: "yabanci" },
-  { image: "/media/theatre/uysal-kadin/uysal-kadin-scene-2.jpg", caption: "Uysal Kadın", slug: "uysal-kadin" },
+  { image: "/media/home/yabanci.png", caption: "Yabancı", slug: "yabanci" },
+  { image: "/media/home/uysal-kadin.jpg", caption: "Uysal Kadın", slug: "uysal-kadin" },
   { image: "/media/theatre/sezuanin-iyi-insani/sezuanin-iyi-insani-scene-2.jpg", caption: "Sezuan’ın İyi İnsanı", slug: "sezuanin-iyi-insani" },
 ]
 
@@ -18,7 +18,7 @@ function HomeDashboard() {
   return <>
     <section className={styles.hero} data-header-tone="dark" aria-labelledby="opening-title">
       <div className={styles.heroImage}>
-        <MorphSlider items={slides} radius={0} transition="melt" duration={1.05} intensity={.3} aberration={0} showCaptions={false} onSlideChange={setActive}/>
+        <MorphSlider items={slides} radius={0} transition="melt" duration={1.05} intensity={.3} aberration={0} autoplay autoplayDelay={3} pauseOnHover={false} showCaptions={false} onSlideChange={setActive}/>
       </div>
       <div className={styles.heroShade} aria-hidden="true"/>
       <div className={styles.heroCopy}>

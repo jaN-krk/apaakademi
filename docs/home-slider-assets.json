@@ -1,0 +1,28 @@
+{
+  "retrievedAt": "2026-09-06",
+  "notes": "Original published files retained without upscaling. User requested theatre images; no third-party license inferred. Available resolutions vary; these are not all Full HD originals.",
+  "images": [
+    {
+      "file": "/media/home/yabanci.png",
+      "title": "Yabancı",
+      "width": 1454,
+      "height": 628,
+      "sourcePage": "https://www.aylakdergi.com/2023/04/07/atlas-tiyatro/",
+      "originalUrl": "https://www.aylakdergi.com/wp-content/uploads/2023/04/yabanci.png"
+    },
+    {
+      "file": "/media/home/uysal-kadin.jpg",
+      "title": "Uysal Kadın",
+      "width": 1024,
+      "height": 803,
+      "sourcePage": "https://www.salom.com.tr/haber/126961/atlas-tiyatro-arastirmalari-10-yasinda-uysal-kadin",
+      "originalUrl": "https://www.salom.com.tr/uploads/news/b_2203202379VjHVeHZ4eYIAKpq9QH0H0m7.jpg"
+    },
+    {
+      "file": "/media/theatre/sezuanin-iyi-insani/sezuanin-iyi-insani-scene-2.jpg",
+      "title": "Sezuan’ın İyi İnsanı",
+      "sourcePage": "https://tiyatrolar.com.tr/tiyatro/sezuanin-iyi-insani",
+      "originalUrl": "https://tiyatrolar.com.tr/files/activity/s/sezuanin-iyi-insani/gallery/26600/sezuanin-iyi-insani-26600.jpg"
+    }
+  ]
+}

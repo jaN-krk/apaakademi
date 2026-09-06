@@ -1,5 +1,5 @@
-.hero { position:relative; isolation:isolate; min-height:740px; height:92svh; max-height:1100px; overflow:hidden; color:#fff; background:#111; }
-.heroImage { position:absolute; inset:0; z-index:0; }
+.hero { position:relative; isolation:isolate; height:100svh; height:100dvh; overflow:hidden; color:#fff; background:#111; }
+.heroImage { position:absolute; inset:0; }
 .heroShade { position:absolute; inset:0; z-index:1; pointer-events:none; background:linear-gradient(90deg,rgba(0,0,0,.62),rgba(0,0,0,.08) 78%),linear-gradient(0deg,rgba(0,0,0,.8),transparent 40%,rgba(0,0,0,.15)); }
 .heroCopy { position:relative; z-index:2; padding:160px max(32px,calc((100vw - 1280px)/2)) 150px; min-height:100%; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; pointer-events:none; }
 .eyebrow { font-size:11px; line-height:1.5; font-weight:500; letter-spacing:.14em; text-transform:uppercase; }
@@ -147,7 +147,7 @@
   .social { padding-left:32px; padding-right:32px; flex-wrap:wrap; gap:20px; }
 }
 @media(max-width:700px) {
-  .hero { min-height:740px; height:94svh; max-height:950px; }
+  .hero { height:100svh; height:100dvh; }
   .heroCopy { padding:130px 24px 210px; justify-content:center; }
   .heroCopy h1 { font-size:clamp(68px,14vw,98px); }
   .heroCopy > .eyebrow { font-size:9px; letter-spacing:.09em; margin-bottom:24px; }
@@ -216,3 +216,23 @@
   .social p { font-size:22px; } .social > div { gap:16px; }
 }
 @media(prefers-reduced-motion:reduce) { .heroActions a,.chapterNav a,.textLink svg,.featuredPoster img,.smallPoster img { transition:none; } }
+@media(max-height:700px) {
+  .heroCopy { padding-top:108px; padding-bottom:140px; }
+  .heroCopy > .eyebrow { display:none; }
+  .heroCopy h1 { font-size:clamp(54px,10vh,70px); }
+  .heroDescription { font-size:12px; line-height:1.4; margin-top:14px; }
+  .heroActions { margin-top:14px; }
+  .heroActions a { font-size:12px; padding:10px 0; }
+  .heroActions a:first-child { padding:10px 16px; }
+}
+@media(max-height:550px) {
+  .heroCopy { padding:100px 24px 100px; }
+  .heroCopy h1 { font-size:clamp(38px,11vh,58px); }
+  .heroDescription { display:none; }
+  .sceneNote { left:24px; right:auto; bottom:24px; width:190px; }
+  .sceneNote > span { font-size:8px; }
+  .sceneNote a { font-size:13px; margin-top:6px; padding-top:7px; }
+  .heroImage :global(.morph-slider-indicators) { display:none; }
+  .heroImage :global(.morph-slider-controls) { right:24px; bottom:24px; }
+  .heroImage :global(.morph-slider-btn) { width:44px; height:44px; }
+}

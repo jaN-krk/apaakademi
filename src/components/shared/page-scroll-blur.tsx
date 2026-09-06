@@ -15,8 +15,8 @@ function PageScrollBlur() {
         ? footer.getBoundingClientRect().top - window.innerHeight
         : document.documentElement.scrollHeight - window.scrollY - window.innerHeight
       if (edge.current) {
-        edge.current.style.opacity = String(Math.max(0, Math.min(1, distance / 100)))
-        edge.current.style.visibility = distance <= 0 ? "hidden" : "visible"
+        edge.current.style.opacity = String(Math.max(0, Math.min(1, distance / 100, window.scrollY / 100)))
+        edge.current.style.visibility = distance <= 0 || window.scrollY <= 0 ? "hidden" : "visible"
       }
     }
     const schedule = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(update) }
