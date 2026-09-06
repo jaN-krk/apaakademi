@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 
 import { Toaster } from "@/components/ui/sonner"
 import { PageScrollBlur } from "@/components/shared/page-scroll-blur"
+import { ScrollChoreography } from "@/components/shared/scroll-choreography"
 import { siteConfig } from "@/config/site"
 import { AppProviders } from "@/providers/app-providers"
 import { absoluteUrl } from "@/lib/seo"
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <AppProviders>
           {children}
           <PageScrollBlur />
+          <ScrollChoreography />
           <Toaster />
         </AppProviders>
       </body>

@@ -4,6 +4,7 @@ import { ArrowUpRight, ArrowRight, ArrowDown, MapPin } from "lucide-react"
 import { getPublicProductions, getPublicPrograms, getPublicInstructors, getAcademyContact } from "@/content"
 import { PersonCard } from "@/components/shared/person-card"
 import { AcademyPaths } from "./academy-paths"
+import { AtlasSignature } from "./atlas-signature"
 import { sources } from "@/content/sources"
 import styles from "./home.module.css"
 
@@ -45,6 +46,8 @@ function HomeBelowFold() {
       <div className={styles.academyHead}><div><p className={styles.eyebrow}>03 / ÇALIŞ · ATLAS PERFORMANS AKADEMİSİ</p><h2 id="academy-title">Seyirci koltuğundan<br/><em>çalışma alanına.</em></h2><p>Bir rolü, bir metni, bir görüntüyü araştırmak.<br/>Sen nereden başlamak istersin?</p></div><Link href="/akademi" className={styles.academyLogo}><Image src="/brand/academy/apa-supplied-dark.png" alt="APA — Atlas Performans Akademisi" width={447} height={447}/><span>Akademiyi tanı<ArrowUpRight size={18}/></span></Link></div>
       <AcademyPaths programs={programs}/>
     </section>
+
+    <AtlasSignature />
 
     <section className={`${styles.section} ${styles.visit}`} aria-labelledby="visit-title">
       <div><p className={styles.eyebrow}>04 / BULUŞ</p><h2 id="visit-title">Ekrandan çık.<br/><em>Bir merhaba de.</em></h2><Link href="/akademi/iletisim" className={styles.textLink}>İletişim ve ulaşım<ArrowUpRight size={20}/></Link></div>

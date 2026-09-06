@@ -41,6 +41,7 @@ const BACK_UV_RECT = { x: 0.513, y: 0.015, w: 0.476, h: 0.73 };
 
 export interface LanyardProps {
   onReady?: () => void;
+  onUnavailable?: () => void;
   compact?: boolean;
   position?: [number, number, number];
   gravity?: [number, number, number];
@@ -67,6 +68,7 @@ useGLTF.preload(cardGLB);
  */
 export default function Lanyard({
   onReady,
+  onUnavailable,
   compact = false,
   position = [0, 0, 20],
   gravity = [0, -40, 0],
@@ -103,9 +105,10 @@ export default function Lanyard({
         style={{ width: '100%', height: '100%', touchAction: 'none' }}
       >
         <CardCamera compact={compact} />
+        <ContextGuard onUnavailable={onUnavailable} />
         <ambientLight intensity={1.15} />
         <Suspense fallback={null}>
-          <Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
+          <Physics gravity={gravity} timeStep={1 / 60} numSolverIterations={12}>
             <Band
               onReady={onReady}
               isMobile={isMobile}
@@ -155,6 +158,17 @@ export default function Lanyard({
   );
 }
 
+function ContextGuard({ onUnavailable }: { onUnavailable?: () => void }) {
+  const gl = useThree(state => state.gl)
+  useEffect(() => {
+    const canvas = gl.domElement
+    const lost = () => onUnavailable?.()
+    canvas.addEventListener('webglcontextlost', lost)
+    return () => canvas.removeEventListener('webglcontextlost', lost)
+  }, [gl, onUnavailable])
+  return null
+}
+
 function CardCamera({ compact }: { compact: boolean }) {
   const { camera, size } = useThree()
   useEffect(() => {
@@ -170,8 +184,6 @@ function CardCamera({ compact }: { compact: boolean }) {
 
 interface BandProps {
   onReady?: () => void;
-  maxSpeed?: number;
-  minSpeed?: number;
   isMobile?: boolean;
   frontImage?: string | null;
   backImage?: string | null;
@@ -183,14 +195,8 @@ interface BandProps {
   caption?: string | null;
 }
 
-type LanyardRigidBody = RapierRigidBody & {
-  lerped?: THREE.Vector3;
-};
-
 function Band({
   onReady,
-  maxSpeed = 50,
-  minSpeed = 0,
   isMobile = false,
   frontImage = null,
   backImage = null,
@@ -204,29 +210,26 @@ function Band({
   const canvasSize = useThree(state => state.size);
   const band = useRef<THREE.Mesh>(null!);
   const fixed = useRef<RapierRigidBody>(null!);
-  const j1 = useRef<LanyardRigidBody>(null!);
-  const j2 = useRef<LanyardRigidBody>(null!);
+  const j1 = useRef<RapierRigidBody>(null!);
+  const j2 = useRef<RapierRigidBody>(null!);
   const j3 = useRef<RapierRigidBody>(null!);
   const card = useRef<RapierRigidBody>(null!);
 
-  const scratch = useRef({ vec: new THREE.Vector3(), ang: new THREE.Vector3(), rot: new THREE.Vector3(), dir: new THREE.Vector3(), clipLocal: new THREE.Vector3(), clipQuat: new THREE.Quaternion() });
-  // Rigid-body local point that matches the metal clip eye on card.glb
-  // (with mesh group scale 2.4 / position y -1.22)
-  const CLIP_LOCAL_Y = 1.52;
+  const clipAnchor = useRef<THREE.Object3D>(null!);
+  const joint1Anchor = useRef<THREE.Object3D>(null!);
+  const joint2Anchor = useRef<THREE.Object3D>(null!);
+  const readyFrames = useRef(0);
+  const scratch = useRef({ vec: new THREE.Vector3(), dir: new THREE.Vector3() });
+  // Centre of the GLB's metal eye, with mesh scale 2.4 and y offset -1.25.
+  const CLIP_LOCAL_Y = 1.568;
+  const CLIP_LOCAL_Z = -0.05;
 
   const segmentProps: RigidBodyProps = {
     type: 'dynamic',
-    canSleep: false,
+    canSleep: true,
     colliders: false,
     angularDamping: 6,
     linearDamping: 5
-  };
-
-  const getLerped = (body: LanyardRigidBody): THREE.Vector3 => {
-    if (!body.lerped) {
-      body.lerped = new THREE.Vector3().copy(body.translation());
-    }
-    return body.lerped;
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -242,11 +245,6 @@ function Band({
   const frontTex = useTexture(frontImage || BLANK_PIXEL);
   const backTex = useTexture(backImage || BLANK_PIXEL);
   const logoTex = useTexture(brandLogo || BLANK_PIXEL);
-
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => onReady?.());
-    return () => cancelAnimationFrame(frame);
-  }, [onReady]);
 
   // Ensure photo textures sample correctly when painted onto the card atlas
   useEffect(() => {
@@ -492,7 +490,7 @@ function Band({
   // j3 anchors into the metal snap-hook eye on the card
   useSphericalJoint(j3, card, [
     [0, 0, 0],
-    [0, CLIP_LOCAL_Y, 0]
+    [0, CLIP_LOCAL_Y, CLIP_LOCAL_Z]
   ]);
 
   useEffect(() => {
@@ -504,8 +502,9 @@ function Band({
     }
   }, [hovered, dragged]);
 
-  useFrame((state, delta) => {
-    const { vec, ang, rot, dir, clipLocal, clipQuat } = scratch.current;
+  useFrame((state) => {
+    if (++readyFrames.current === 3) onReady?.();
+    const { vec, dir } = scratch.current;
     if (dragged && typeof dragged !== 'boolean') {
       vec.set(state.pointer.x, state.pointer.y, 0.5).unproject(state.camera);
       dir.copy(vec).sub(state.camera.position).normalize();
@@ -518,7 +517,7 @@ function Band({
       vec.x = THREE.MathUtils.clamp(vec.x, -horizontalLimit, horizontalLimit);
       vec.y = THREE.MathUtils.clamp(vec.y, state.camera.position.y - viewport.height / 2 + 1.3, state.camera.position.y + viewport.height / 2 - 1.75);
       vec.z = 0;
-      [card, j1, j2, j3, fixed].forEach((ref) => ref.current?.wakeUp());
+      [card, j1, j2, j3].forEach((ref) => ref.current?.wakeUp());
       card.current?.setNextKinematicTranslation({
         x: vec.x,
         y: vec.y,
@@ -528,47 +527,28 @@ function Band({
     if (fixed.current && card.current) {
       const t = card.current.translation();
       if (t.y < -6 || Math.abs(t.x) > 8 || Math.abs(t.z) > 6) {
-        card.current.setTranslation({ x: 0.45, y: 2.1, z: 0 }, true);
+        card.current.setTranslation({ x: 0, y: 4.2 - 2.04 - CLIP_LOCAL_Y, z: 0 }, true);
+        card.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
         card.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
         card.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
-        j1.current?.setTranslation({ x: 0.12, y: 3.55, z: 0 }, true);
-        j2.current?.setTranslation({ x: 0.22, y: 3.1, z: 0 }, true);
-        j3.current?.setTranslation({ x: 0.32, y: 2.65, z: 0 }, true);
+        [j1, j2, j3].forEach((joint, index) => {
+          joint.current.setTranslation({ x: 0, y: 4.2 - .68 * (index + 1), z: CLIP_LOCAL_Z }, true);
+          joint.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+          joint.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+        });
       }
 
-      [j1, j2].forEach((ref) => {
-        const lerped = getLerped(ref.current);
-        const clampedDistance = Math.max(
-          0.1,
-          Math.min(1, lerped.distanceTo(ref.current.translation()))
-        );
-        lerped.lerp(
-          ref.current.translation(),
-          1 - Math.exp(-delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)))
-        );
-      });
-
-      // Band must end in the metal clip, not float above it
-      const cardT = card.current.translation();
-      const cardR = card.current.rotation();
-      clipQuat.set(cardR.x, cardR.y, cardR.z, cardR.w);
-      clipLocal.set(0, CLIP_LOCAL_Y, 0).applyQuaternion(clipQuat);
-      curve.points[0].set(
-        cardT.x + clipLocal.x,
-        cardT.y + clipLocal.y,
-        cardT.z + clipLocal.z
-      );
-      curve.points[1].copy(getLerped(j2.current));
-      curve.points[2].copy(getLerped(j1.current));
+      // Read the same interpolated scene transforms as the rendered card.
+      // Mixing raw physics positions with rendered positions made the hook jitter.
+      clipAnchor.current.getWorldPosition(curve.points[0]);
+      joint2Anchor.current.getWorldPosition(curve.points[1]);
+      joint1Anchor.current.getWorldPosition(curve.points[2]);
       curve.points[3].copy(fixed.current.translation());
       // meshline geometry
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(band.current.geometry as any).setPoints(
         curve.getPoints(isMobile ? 20 : 40)
       )
-      ang.copy(card.current.angvel());
-      rot.copy(card.current.rotation());
-      card.current.setAngvel({ x: ang.x, y: ang.y - rot.y * 0.25, z: ang.z }, true);
     }
   });
 
@@ -578,24 +558,29 @@ function Band({
   return (
     <>
       <group position={[0, 4.2, 0]}>
-        <RigidBody ref={fixed} {...segmentProps} type="fixed" />
-        <RigidBody position={[0.1, -0.38, 0]} ref={j1} {...segmentProps} type="dynamic">
+        <RigidBody ref={fixed} position={[0, 0, CLIP_LOCAL_Z]} {...segmentProps} type="fixed" />
+        <RigidBody position={[0, -0.68, CLIP_LOCAL_Z]} ref={j1} {...segmentProps} type="dynamic">
+          <object3D ref={joint1Anchor} />
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[0.18, -0.82, 0]} ref={j2} {...segmentProps} type="dynamic">
+        <RigidBody position={[0, -1.36, CLIP_LOCAL_Z]} ref={j2} {...segmentProps} type="dynamic">
+          <object3D ref={joint2Anchor} />
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[0.26, -1.28, 0]} ref={j3} {...segmentProps} type="dynamic">
+        <RigidBody position={[0, -2.04, CLIP_LOCAL_Z]} ref={j3} {...segmentProps} type="dynamic">
           <BallCollider args={[0.1]} />
         </RigidBody>
         <RigidBody
-          position={[0.32, -1.85, 0]}
+          position={[0, -2.04 - CLIP_LOCAL_Y, 0]}
           ref={card}
           {...segmentProps}
           type={dragged ? 'kinematicPosition' : 'dynamic'}
+          enabledRotations={[false, false, true]}
         >
+          <object3D ref={clipAnchor} position={[0, CLIP_LOCAL_Y, CLIP_LOCAL_Z]} />
           <CuboidCollider args={[0.8, 1.12, 0.01]} />
           <group
+            dispose={null}
             scale={2.4}
             position={[0, -1.25, -0.05]}
             onPointerOver={() => hover(true)}

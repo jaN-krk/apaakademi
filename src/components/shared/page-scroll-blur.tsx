@@ -10,6 +10,10 @@ function PageScrollBlur() {
   useEffect(() => {
     let frame = 0
     const update = () => {
+      if (window.matchMedia("(max-width:767px), (hover:none) and (pointer:coarse)").matches) {
+        if(edge.current) edge.current.style.visibility="hidden"
+        return
+      }
       const footer = document.getElementById("footer")
       const distance = footer
         ? footer.getBoundingClientRect().top - window.innerHeight

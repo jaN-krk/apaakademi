@@ -23,7 +23,7 @@ function HomeDashboard() {
       <div className={styles.heroShade} aria-hidden="true"/>
       <div className={styles.heroCopy}>
         <p className={styles.eyebrow}>ATLAS / TİYATRO · ARAŞTIRMA · EĞİTİM</p>
-        <h1 id="opening-title">Sahneden<br/><em>atölyeye.</em></h1>
+        <h1 id="opening-title"><span className={styles.titleLine}><span>Sahneden</span></span><span className={styles.titleLine}><em>atölyeye.</em></span></h1>
         <p className={styles.heroDescription}>Bir tiyatronun üretiminden doğan,<br/>birlikte çalışarak büyüyen bir alan.</p>
         <div className={styles.heroActions}>
           <Link href="/tiyatro/oyunlar">Oyunlarla tanış<ArrowUpRight size={19}/></Link>
